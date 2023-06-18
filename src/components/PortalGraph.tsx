@@ -1,28 +1,34 @@
 export default function PortalGraph({ points, multiplyer = 16, type = 0, title = '2rem', num = '1rem' }) {
     //type 0 = overword to nether, type 1 nether to overworld
-
-    let pad = 5
+    let padding = 0;
+    let pad = 0;
+    pad = padding = 5
     let mult = 1;
     let search = 1;
     let Nether = false;
     let Overworld = false;
+    let bgColor = 'rgb(120, 120, 120)';
+    let markerStart = '';
+    let markerEnd = '';
 
     if (type === 0) {
         mult = multiplyer * 8
-        search = 52
+        search = 16
         Nether = true
+        bgColor = 'rgb(140, 120, 120)';
+        markerEnd = "url(#arrow)";
     } else {
         mult = multiplyer
-        search = 175
+        search = 128
         pad = 8 * pad
         Overworld = true
+        bgColor = 'rgb(120, 140, 120)';
+        markerStart = "url(#arrow)"
     }
 
     let allOW = points.map(d => toNether(d.ow, Nether)).filter(c => c.length > 0) //array of all ow pts
     let allNether = points.map(d => toOW(d.n, Overworld)).filter(c => c.length > 0) //array of all nether pts
     let names = points.map(d => d.name)
-
-    console.log(allOW, allNether)
 
     let norms = findNormalize(allOW, allNether)
     let largestX = norms.maxX - (norms.minX -pad)
@@ -53,12 +59,12 @@ export default function PortalGraph({ points, multiplyer = 16, type = 0, title =
             </defs>
             {/* <g transform="scale(1)"> */}
 
-            <rect width={largestX * mult + pad * 50} height={largestZ * mult + pad * 50} fill="grey" />
+            <rect width={largestX * mult + padding * 50} height={largestZ * mult + padding * 50 } fill={bgColor} />
 
             {allOW.map((p, v) =>
                 <>
                     <circle cx={((p[0] - (norm.minX)) * mult)} cy={((p[2] - (norm.minZ)) * mult)} r="5" fill="green" />
-                    <text x={((p[0] - (norm.minX)) * mult)} y={((p[2] - (norm.minZ)) * mult + 10)} font-size={title}> {names[v]} </text>
+                    <text x={((p[0] - (norm.minX)) * mult) + 10} y={((p[2] - (norm.minZ)) * mult + 10)} font-size={title}> {names[v]} </text>
                     <text x={((p[0] - (norm.minX)) * mult)} y={((p[2] - (norm.minZ)) * mult + 25)} font-size={num}> {allOW[v][0]}, {allOW[v][1]}, {allOW[v][2]} </text>
 
                 </>
@@ -66,7 +72,7 @@ export default function PortalGraph({ points, multiplyer = 16, type = 0, title =
             {allNether.map((p, v) =>
                 <>
                     <circle cx={((p[0] - (norm.minX)) * mult)} cy={((p[2] - (norm.minZ)) * mult)} r="5" fill="red" />
-                    <text x={((p[0] - (norm.minX)) * mult)} y={((p[2] - (norm.minZ)) * mult + 10)} font-size={title}> {names[v]} </text>
+                    <text x={((p[0] - (norm.minX)) * mult) + 10} y={((p[2] - (norm.minZ)) * mult + 10)} font-size={title}> {names[v]} </text>
                     <text x={((p[0] - (norm.minX)) * mult)} y={((p[2] - (norm.minZ)) * mult + 25)} font-size={num}> {allNether[v][0]}, {allNether[v][1]}, {allNether[v][2]} </text>
                 </>
             )}
@@ -80,8 +86,8 @@ export default function PortalGraph({ points, multiplyer = 16, type = 0, title =
 
             {minLine.map((p, v) =>
                 <>
-                    <line x1={((p.x1 - (norm.minX)) * mult)} y1={((p.z1 - (norm.minZ)) * mult)} x2={((p.x2 - (norm.minX)) * mult)} y2={((p.z2 - (norm.minZ)) * mult)} stroke="cyan" marker-end="url(#arrow)" />
-                    <text x={(((p.x1 - (norm.minX)) * mult) + ((p.x2 - (norm.minX)) * mult)) / 2} y={(((p.z1 - (norm.minZ)) * mult) + ((p.z2 - (norm.minZ)) * mult)) / 2} font-size={num}> {p.dis} </text>
+                    <line x1={((p.x1 - (norm.minX)) * mult)} y1={((p.z1 - (norm.minZ)) * mult)} x2={((p.x2 - (norm.minX)) * mult)} y2={((p.z2 - (norm.minZ)) * mult)} stroke="cyan" marker-end={markerEnd} marker-start={markerStart} />
+                    {/* <text x={(((p.x1 - (norm.minX)) * mult) + ((p.x2 - (norm.minX)) * mult)) / 2} y={(((p.z1 - (norm.minZ)) * mult) + ((p.z2 - (norm.minZ)) * mult)) / 2} font-size={num}> {p.dis} </text> */}
                 </>
             )}
 
@@ -95,6 +101,10 @@ export default function PortalGraph({ points, multiplyer = 16, type = 0, title =
 }
 
 function toNether(pt, t) {
+    if(pt.length === 0)
+    {
+        return []
+    }
     if(t){
         return ([Math.floor(pt[0] / 8), pt[1], Math.floor(pt[2] / 8)])
     } else {
@@ -104,6 +114,10 @@ function toNether(pt, t) {
 }
 
 function toOW(pt, t) {
+    if(pt.length === 0)
+    {
+        return []
+    }
     if(t){
         return ([pt[0] * 8, pt[1], pt[2] * 8])
     } else {
@@ -129,7 +143,7 @@ function lines(setA, setB, search) {
     for (let i = 0; i < setA.length; i++) {
         for (let j = 0; j < setB.length; j++) {
             let dis = eclid3(setA[i], setB[j])
-            if (dis < search) {
+            if(Math.abs(setA[i][0] - setB[j][0]) <= search && Math.abs(setA[i][2] - setB[j][2]) <= search) {
                 pts.push({ x1: setA[i][0], z1: setA[i][2], x2: setB[j][0], z2: setB[j][2], dis: dis.toFixed(2) })
             }
         }
@@ -147,7 +161,7 @@ function minLines(setA, setB, search) {
         let minDis = Infinity;
         for (let j = 0; j < setB.length; j++) {
             let dis = eclid3(setA[i], setB[j])
-            if (dis < search && minDis > dis) {
+            if (Math.abs(setA[i][0] - setB[j][0]) <= search && Math.abs(setA[i][2] - setB[j][2]) <= search && minDis > dis) {
                 minDis = dis
                 minPt = { x1: setA[i][0], z1: setA[i][2], x2: setB[j][0], z2: setB[j][2], dis: dis.toFixed(2) }
             }
