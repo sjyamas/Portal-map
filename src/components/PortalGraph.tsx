@@ -1,33 +1,43 @@
-export default function PortalGraph({ points, multiplyer, title='2rem', num='1rem'}) {
-    let norm = findNormalize(points)
-    // console.log('points', points)
-    // console.log('norm', norm)
+export default function PortalGraph({ points, multiplyer = 16, type = 0, title = '2rem', num = '1rem' }) {
+    //type 0 = overword to nether, type 1 nether to overworld
 
-    let wid = norm.maxX - norm.minX
-    let hei = norm.maxZ - norm.minZ
+    let pad = 5
+    let mult = 1;
+    let search = 1;
+    let Nether = false;
+    let Overworld = false;
 
-    let allOW = points.map(d => toNether(d[0])).filter(c => c.length > 0) //array of all ow pts
-    let allNether = points.map(d => d[1]).filter(c => c.length > 0) //array of all nether pts
-    let names = points.map(d => d[2])
+    if (type === 0) {
+        mult = multiplyer * 8
+        search = 52
+        Nether = true
+    } else {
+        mult = multiplyer
+        search = 175
+        pad = 8 * pad
+        Overworld = true
+    }
 
-    // console.log('pts', allOW, allNether)
-    let mult = multiplyer * 8
+    let allOW = points.map(d => toNether(d.ow, Nether)).filter(c => c.length > 0) //array of all ow pts
+    let allNether = points.map(d => toOW(d.n, Overworld)).filter(c => c.length > 0) //array of all nether pts
+    let names = points.map(d => d.name)
 
-    // console.log('get', wid * mult, hei * mult)
+    console.log(allOW, allNether)
 
-    let line = lines(allOW, allNether)
-    let minLine = minLines(allOW, allNether)
+    let norms = findNormalize(allOW, allNether)
+    let largestX = norms.maxX - (norms.minX -pad)
+    let largestZ = norms.maxZ - (norms.minZ-pad)
 
-    console.log('lines', line)
-    // console.log('jEFF', ((p[0] - (norm.minX)) * mult), ((p[2] - (norm.minZ)) * mult));
+    let norm = { minX: norms.minX - pad, maxX: norms.maxX - pad, minZ: norms.minZ - pad, maxZ: norms.maxZ - pad}
+
+    let line = lines(allOW, allNether, search)
+    let minLine = minLines(allOW, allNether, search)
+
     return (
         <svg
-        width={wid * mult + 500}
-        height={hei * mult + 500}
-        xmlns="http://www.w3.org/2000/svg"
-        // width='100%'
-        // height='50px'
-        // viewBox="0 0 10 20"
+            width={largestX * mult + pad * 50}
+            height={largestZ * mult + pad * 50}
+            xmlns="http://www.w3.org/2000/svg"
         >
             <defs>
                 <marker
@@ -41,9 +51,9 @@ export default function PortalGraph({ points, multiplyer, title='2rem', num='1re
                     <path d="M 0 0 L 10 5 L 0 10 z" />
                 </marker>
             </defs>
-        {/* <g transform="scale(1)"> */}
+            {/* <g transform="scale(1)"> */}
 
-            <rect width={wid * mult + 500} height={hei * mult + 500} fill="grey" />
+            <rect width={largestX * mult + pad * 50} height={largestZ * mult + pad * 50} fill="grey" />
 
             {allOW.map((p, v) =>
                 <>
@@ -70,7 +80,7 @@ export default function PortalGraph({ points, multiplyer, title='2rem', num='1re
 
             {minLine.map((p, v) =>
                 <>
-                    <line x1={((p.x1 - (norm.minX)) * mult)} y1={((p.z1 - (norm.minZ)) * mult)} x2={((p.x2 - (norm.minX)) * mult)} y2={((p.z2 - (norm.minZ)) * mult)} stroke="cyan" marker-end="url(#arrow)"/>
+                    <line x1={((p.x1 - (norm.minX)) * mult)} y1={((p.z1 - (norm.minZ)) * mult)} x2={((p.x2 - (norm.minX)) * mult)} y2={((p.z2 - (norm.minZ)) * mult)} stroke="cyan" marker-end="url(#arrow)" />
                     <text x={(((p.x1 - (norm.minX)) * mult) + ((p.x2 - (norm.minX)) * mult)) / 2} y={(((p.z1 - (norm.minZ)) * mult) + ((p.z2 - (norm.minZ)) * mult)) / 2} font-size={num}> {p.dis} </text>
                 </>
             )}
@@ -79,47 +89,47 @@ export default function PortalGraph({ points, multiplyer, title='2rem', num='1re
                 <circle cx={(500)} cy={(1050)} r="5" fill="yellow" /> */}
 
             {/* <line x1="0" y1="10" x2="5000" y2="10" stroke="blue" /> */}
-            {points}
             {/* </g> */}
         </svg>
-
-        
     );
 }
 
-function toNether(pt) {
-    return ([Math.floor(pt[0] / 8), pt[1], Math.floor(pt[2] / 8)])
+function toNether(pt, t) {
+    if(t){
+        return ([Math.floor(pt[0] / 8), pt[1], Math.floor(pt[2] / 8)])
+    } else {
+        return ([pt[0], pt[1], pt[2]])
+    }
+    
+}
 
+function toOW(pt, t) {
+    if(t){
+        return ([pt[0] * 8, pt[1], pt[2] * 8])
+    } else {
+        return ([pt[0], pt[1], pt[2]])
+    }
 }
 
 
-function findNormalize(points: any) {
-    let pad = 5
-    let allOW = points.map(d => toNether(d[0])).filter(c => c.length > 0) //array of all ow pts
-    let allNether = points.map(d => d[1]).filter(c => c.length > 0) //array of all nether pts
-    console.log("allOW", allOW, "   allNether", allNether)
-    console.log('this', allOW.map(d => d[0]).concat(allNether.map(d => d[0])))
+function findNormalize(setA, setB, pad = 5) {
+    let minX = Math.min(...setA.map(d => d[0]).concat(setB.map(d => d[0])))
+    let minZ = Math.min(...setA.map(d => d[2]).concat(setB.map(d => d[2])))
 
+    let maxX = Math.max(...setA.map(d => d[0]).concat(setB.map(d => d[0])))
+    let maxZ = Math.max(...setA.map(d => d[2]).concat(setB.map(d => d[2])))
 
-    let minX = Math.min(...allOW.map(d => d[0]).concat(allNether.map(d => d[0])))
-    let minZ = Math.min(...allOW.map(d => d[2]).concat(allNether.map(d => d[2])))
-
-    let maxX = Math.max(...allOW.map(d => d[0]).concat(allNether.map(d => d[0])))
-    let maxZ = Math.max(...allOW.map(d => d[2]).concat(allNether.map(d => d[2])))
-    console.log('tf', [minX, minZ, maxX, maxZ])
-
-    // return [[minX, maxX,], [minZ, maxZ]]
-    return { minX: minX - pad, maxX: maxX - pad, minZ: minZ - pad, maxZ: maxZ - pad }
+    return { minX: minX , maxX: maxX , minZ: minZ , maxZ: maxZ }
 }
 
 
-function lines(setA, setB) {
+function lines(setA, setB, search) {
     let pts = []; // [{x1: 0, z1: 0 x2: 0, z2: 0, dist}]
 
     for (let i = 0; i < setA.length; i++) {
         for (let j = 0; j < setB.length; j++) {
             let dis = eclid3(setA[i], setB[j])
-            if (dis < 52) {
+            if (dis < search) {
                 pts.push({ x1: setA[i][0], z1: setA[i][2], x2: setB[j][0], z2: setB[j][2], dis: dis.toFixed(2) })
             }
         }
@@ -127,7 +137,9 @@ function lines(setA, setB) {
     return pts
 }
 
-function minLines(setA, setB) {
+// if setA[i][0] setB[i][0]
+
+function minLines(setA, setB, search) {
     let pts = []; // [{x1: 0, z1: 0 x2: 0, z2: 0, dist}]
     let minPt;
 
@@ -135,7 +147,7 @@ function minLines(setA, setB) {
         let minDis = Infinity;
         for (let j = 0; j < setB.length; j++) {
             let dis = eclid3(setA[i], setB[j])
-            if (dis < 52 && minDis > dis) {
+            if (dis < search && minDis > dis) {
                 minDis = dis
                 minPt = { x1: setA[i][0], z1: setA[i][2], x2: setB[j][0], z2: setB[j][2], dis: dis.toFixed(2) }
             }

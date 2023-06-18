@@ -46,7 +46,6 @@ export default function PortalGraphExit({ points, multiplyer, title='2rem', num=
                     <circle cx={((p[0] - (norm.minX)) * mult)} cy={((p[2] - (norm.minZ)) * mult)} r="5" fill="green" />
                     <text x={((p[0] - (norm.minX)) * mult)} y={((p[2] - (norm.minZ)) * mult + 10)} font-size={title}> {names[v]} </text>
                     <text x={((p[0] - (norm.minX)) * mult)} y={((p[2] - (norm.minZ)) * mult + 25)} font-size={num}> {allOW[v][0]}, {allOW[v][1]}, {allOW[v][2]} </text>
-
                 </>
             )}
             {allNether.map((p, v) =>
@@ -71,10 +70,6 @@ export default function PortalGraphExit({ points, multiplyer, title='2rem', num=
                 </>
             )}
 
-            {/* <circle cx={(wid * mult)} cy={( hei * mult)} r="5" fill="yellow" />
-                <circle cx={(500)} cy={(1050)} r="5" fill="yellow" /> */}
-
-            {/* <line x1="0" y1="10" x2="5000" y2="10" stroke="blue" /> */}
             {points}
         </svg>
 
