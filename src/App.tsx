@@ -9,7 +9,7 @@ function App() {
   const [xValue, setXValue] = useState('0')
   const [yValue, setYValue] = useState('0')
 
-  let m = 4;
+  let m = 6;
   return (
     <div>
       {/* <SevenSegment x={xValue} y={yValue}/> */}
